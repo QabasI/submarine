@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submarine Game - Information Theory</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            background-color: #f0f0f0;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(5, 50px);
+            grid-template-rows: repeat(5, 50px);
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .cell {
+            width: 50px;
+            height: 50px;
+            background-color: lightblue;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .cell.clicked {
+            background-color: lightgray;
+        }
+
+        #probability {
+            margin-top: 20px;
+        }
+
+        #total-bits {
+            margin-top: 10px;
+        }
+
+        #replay-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: none;
+        }
+
+        #replay-btn:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Find the Submarine!</h1>
+    <div id="game-board"></div>
+    <div id="probability">
+        <p>Probability of hitting the submarine: <span id="prob-hit">0</span></p>
+        <p>Probability of missing the submarine: <span id="prob-miss">0</span></p>
+        <p>Remaining cells: <span id="remaining-cells">25</span></p>
+    </div>
+    <div id="total-bits">
+        <p>Total bits: <span id="bits">0</span></p>
+    </div>
+    <button id="replay-btn" onclick="resetGame()" style="display:none;">Replay</button>
+
+    <script>
+        const gridSize = 5; // 5x5 grid
+        let remainingCells = gridSize * gridSize;
+        let submarinePosition = Math.floor(Math.random() * remainingCells); // Random position for submarine
+        let clickedCells = 0; // Counter for how many cells have been clicked
+        let totalBits = 0;
+
+        // Create the game board (5x5 grid)
+        const gameBoard = document.getElementById('game-board');
+        for (let i = 0; i < remainingCells; i++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            cell.dataset.index = i;
+            cell.textContent = ''; // Initially empty
+            cell.addEventListener('click', handleCellClick);
+            gameBoard.appendChild(cell);
+        }
+
+        // Update probability, remaining cells, and total bits display
+        function updateProbability(hit, isClick = true) {
+            const probHit = 1 / remainingCells; // Probability of hitting the submarine
+            const probMiss = (remainingCells - 1) / remainingCells; // Probability of missing
+            let bits = 0;
+
+            if (isClick) {
+                if (hit) {
+                    bits = -Math.log2(probHit); // Submarine found, calculate bits for hit
+                } else {
+                    bits = -Math.log2(probMiss); // Submarine not found, calculate bits for miss
+                    remainingCells--; // Decrease remaining cells only on miss
+                }
+                totalBits += bits; // Accumulate the total bits
+            }
+
+            // Display the probabilities and total bits
+            document.getElementById('prob-hit').textContent = probHit.toFixed(3);
+            document.getElementById('prob-miss').textContent = probMiss.toFixed(3);
+            document.getElementById('remaining-cells').textContent = remainingCells;
+            document.getElementById('bits').textContent = totalBits.toFixed(3);
+        }
+
+        // Handle the click event on a cell
+        function handleCellClick(event) {
+            const cell = event.target;
+            const clickedIndex = parseInt(cell.dataset.index);
+
+            if (cell.classList.contains('clicked')) {
+                return; // Ignore clicks on already clicked cells
+            }
+
+            // Mark the cell as clicked
+            cell.classList.add('clicked');
+
+            const hit = clickedIndex === submarinePosition; // Check if the submarine was hit
+	    updateProbability(hit, true); // Final probability update
+            // If the submarine is under this cell
+            if (hit) {
+		setTimeout(() => {
+            		alert('You found the submarine!');
+            		document.getElementById('replay-btn').style.display = 'block'; // Show replay button
+       	     	}, 50); // 50ms delay still defers to allow rendering
+                document.getElementById('replay-btn').style.display = 'block'; // Show replay button
+                return; // End the game
+            }
+
+
+
+            // Increase clicked cells on miss
+            clickedCells++;
+
+        }
+
+        // Function to reset the game
+        function resetGame() {
+            // Reset variables
+            remainingCells = gridSize * gridSize;
+            submarinePosition = Math.floor(Math.random() * remainingCells); // New random submarine position
+            clickedCells = 0;
+            totalBits = 0;
+            // Reset the board UI
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                cell.classList.remove('clicked');
+            });
+
+            // Hide the replay button and reset probabilities and bits
+            document.getElementById('replay-btn').style.display = 'none';
+            updateProbability(false, false); // Reset the probabilities and bits display
+        }
+
+        // Initial call to display probabilities
+        updateProbability(false, false);
+    </script>
+</body>
+
